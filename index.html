@@ -231,9 +231,9 @@ function freeze(on) {
 // everything a click in this place can play downloads in the background as soon as the place opens, so a
 // film starts the moment it is clicked instead of waiting on the network; files are held as blob URLs and
 // the oldest ones outside the current place are dropped past a memory budget
-const cache = new Map(); // url -> { url: blob URL once downloaded, bytes }
+const cache = new Map(); // url -> { url: blob URL once downloaded, bytes, ctl: AbortController while downloading }
 const BUDGET = 260e6;
-let cacheBytes = 0, fetching = 0, wanted = [], keep = new Set();
+let cacheBytes = 0, fetching = 0, wanted = [], keep = new Set(), held = false;
 const local = (u) => cache.get(u)?.url ?? u;
 function warm(urls) {
   keep = new Set(urls);
@@ -241,15 +241,24 @@ function warm(urls) {
   pump();
 }
 function pump() {
-  while (fetching < 2 && wanted.length) {
-    const u = wanted.shift(), e = { url: null, bytes: 0 };
+  while (!held && fetching < 2 && wanted.length) {
+    const u = wanted.shift(), e = { url: null, bytes: 0, ctl: new AbortController() };
     if (cache.has(u)) continue;
     cache.set(u, e); fetching++;
-    fetch(u).then((r) => (r.ok ? r.blob() : Promise.reject(r.status)))
-      .then((b) => { e.url = URL.createObjectURL(b); e.bytes = b.size; cacheBytes += b.size; trim(); })
-      .catch(() => cache.delete(u))
+    fetch(u, { signal: e.ctl.signal }).then((r) => (r.ok ? r.blob() : Promise.reject(r.status)))
+      .then((b) => { e.url = URL.createObjectURL(b); e.bytes = b.size; cacheBytes += b.size; e.ctl = null; trim(); })
+      .catch(() => { if (cache.get(u) === e) cache.delete(u); if (keep.has(u) && !wanted.includes(u)) wanted.push(u); })
       .finally(() => { fetching--; pump(); });
   }
+}
+// a click on a film that has not finished downloading gets the whole connection: the background downloads
+// stop (and start again later) and the film streams straight from the network until it is fully buffered
+function hold(src, t) {
+  if (cache.get(src)?.url) return;
+  held = true;
+  for (const e of cache.values()) e.ctl?.abort();
+  const release = () => { film.removeEventListener('canplaythrough', release); film.removeEventListener('ended', release); if (!held) return; held = false; pump(); };
+  film.addEventListener('canplaythrough', release); film.addEventListener('ended', release); t.cleanups.push(release);
 }
 function trim() {
   for (const [u, e] of cache) {
@@ -307,6 +316,7 @@ async function playFilm(src, t, journey) {
   t.cleanups.push(() => { film.pause(); film.classList.add('hidden'); busy = false; hot.style.pointerEvents = ''; menu.style.visibility = ''; });
   rampMusic(.12);
   film.src = local(src); film.dataset.src = src; film.currentTime = 0; film.volume = 1;
+  hold(src, t);
   await until(film, 'canplay', t); if (t.cancelled) return false;
   film.classList.remove('hidden'); loop.classList.add('hidden'); loop.pause();
   film.play().catch(() => {});
