@@ -62,8 +62,11 @@
   #choices { position: absolute; z-index: 5; left: 50%; bottom: 74px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 18px; background: var(--panel); border: 1px solid var(--gold-soft); border-radius: 16px; backdrop-filter: blur(6px); }
   #choices p { margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 22px; }
   #choices div { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-  #choices button { display: flex; align-items: center; gap: 8px; }
-  #choices i { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255,255,255,.6); flex: none; }
+  /* each option is a picture of how it turns out, so nobody has to read to choose */
+  #choices div { gap: 10px; }
+  #choices button { padding: 4px; border-radius: 14px; border-width: 2px; transition: transform .15s, border-color .15s, box-shadow .15s; }
+  #choices button:hover, #choices button:focus-visible { transform: translateY(-3px) scale(1.04); border-color: var(--gold); box-shadow: 0 0 18px rgba(255, 206, 120, .55); }
+  #stage #choices img { position: static; display: block; width: clamp(64px, 17vw, 132px); height: auto; aspect-ratio: 1; border-radius: 10px; object-fit: cover; }
   #tray { position: absolute; top: 16px; right: 18px; display: flex; gap: 8px; }
   #tray button { padding: 7px 12px; font-size: 13px; }
   #toast { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 16px 26px; background: var(--panel); border: 1px solid var(--gold); border-radius: 14px; font-family: 'Cormorant Garamond', serif; font-size: 26px; }
@@ -225,14 +228,57 @@ function freeze(on) {
   loop.classList.toggle('hidden', on || hinting);
 }
 
+// everything a click in this place can play downloads in the background as soon as the place opens, so a
+// film starts the moment it is clicked instead of waiting on the network; files are held as blob URLs and
+// the oldest ones outside the current place are dropped past a memory budget
+const cache = new Map(); // url -> { url: blob URL once downloaded, bytes }
+const BUDGET = 260e6;
+let cacheBytes = 0, fetching = 0, wanted = [], keep = new Set();
+const local = (u) => cache.get(u)?.url ?? u;
+function warm(urls) {
+  keep = new Set(urls);
+  wanted = urls.filter((u) => !cache.has(u));
+  pump();
+}
+function pump() {
+  while (fetching < 2 && wanted.length) {
+    const u = wanted.shift(), e = { url: null, bytes: 0 };
+    if (cache.has(u)) continue;
+    cache.set(u, e); fetching++;
+    fetch(u).then((r) => (r.ok ? r.blob() : Promise.reject(r.status)))
+      .then((b) => { e.url = URL.createObjectURL(b); e.bytes = b.size; cacheBytes += b.size; trim(); })
+      .catch(() => cache.delete(u))
+      .finally(() => { fetching--; pump(); });
+  }
+}
+function trim() {
+  for (const [u, e] of cache) {
+    if (cacheBytes <= BUDGET) break;
+    if (!e.url || keep.has(u) || film.src === e.url || loop.src === e.url) continue;
+    URL.revokeObjectURL(e.url); cacheBytes -= e.bytes; cache.delete(u);
+  }
+}
+function warmPlace() {
+  const films = [], next = [];
+  for (const h of place.hotspots) {
+    for (const x of [h, ...(h.choices ?? [])]) { if (x.film) films.push(x.film); if (x.result) new Image().src = x.result; if (x.thumb) new Image().src = x.thumb; }
+    const to = h.to && world.places.find((p) => p.id === h.to);
+    if (to) { new Image().src = to.still; if (to.loop) next.push(to.loop); }
+  }
+  if (place.id !== world.start) { const home = world.places.find((p) => p.id === world.start); new Image().src = home.still; }
+  warm([...new Set([...films, ...next])]);
+}
+
 function show() {
   still.src = after && place.stillAfter ? (afterSrc ?? place.stillAfter) : place.still;
   $('title').textContent = place.title;
   if (place.loop && !(place.stillAfter && after)) {
-    loop.src = place.loop; loop.volume = .5; loop.classList.toggle('hidden', hinting); loop.play().catch(() => {});
+    if (loop.dataset.src !== place.loop) { loop.src = local(place.loop); loop.dataset.src = place.loop; }
+    loop.volume = .5; loop.classList.toggle('hidden', hinting); loop.play().catch(() => {});
   } else { loop.pause(); loop.classList.add('hidden'); }
   setMusic(place.music);
   draw();
+  warmPlace();
 }
 
 // Every action can be interrupted: a new click cancels the running one (its cleanups stop the media and
@@ -260,7 +306,7 @@ async function playFilm(src, t, journey) {
   if (journey) { hot.style.pointerEvents = 'none'; menu.style.visibility = 'hidden'; }
   t.cleanups.push(() => { film.pause(); film.classList.add('hidden'); busy = false; hot.style.pointerEvents = ''; menu.style.visibility = ''; });
   rampMusic(.12);
-  film.src = src; film.currentTime = 0; film.volume = 1;
+  film.src = local(src); film.dataset.src = src; film.currentTime = 0; film.volume = 1;
   await until(film, 'canplay', t); if (t.cancelled) return false;
   film.classList.remove('hidden'); loop.classList.add('hidden'); loop.pause();
   film.play().catch(() => {});
@@ -349,7 +395,8 @@ function ask(h, t) {
   choices.innerHTML = `<p>${h.ask ?? 'Choose one'}</p><div></div>`;
   for (const c of h.choices) {
     const b = document.createElement('button');
-    b.innerHTML = `<i style="background:${c.swatch}"></i>${c.label}`;
+    b.title = c.label; b.setAttribute('aria-label', c.label);
+    b.innerHTML = `<img src="${c.thumb}" alt="">`;
     b.onclick = () => act({ ...h, ...c, choices: undefined, label: c.label });
     choices.lastChild.appendChild(b);
   }
