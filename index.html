@@ -21,6 +21,7 @@
 <meta name="twitter:title" content="The North Pole, a Sogni World">
 <meta name="twitter:description" content="A Sogni World of gingerbread, elves and northern lights. Click through Santa's cottage, the toy workshop, the reindeer stable and a sleigh ride to the moon.">
 <meta name="twitter:image" content="https://natalieart.github.io/sogni-north-pole/og.jpg">
+<link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
@@ -41,8 +42,9 @@
   svg#hot { position: absolute; inset: 0; width: 100%; height: 100%; }
   svg#hot path { fill: rgba(232, 194, 122, 0); stroke: rgba(232, 194, 122, 0); stroke-width: .0025; cursor: pointer; transition: fill .25s, stroke .25s; vector-effect: non-scaling-stroke; }
   /* dark halo under the gold line keeps the outline readable on white fur and snow as well as on night sky */
-  svg#hot g:hover path, svg#hot g.hint path { fill: rgba(255, 214, 140, .24); stroke: #ffd98a; stroke-width: 3px; }
-  svg#hot g:hover, svg#hot g.hint { filter: drop-shadow(0 0 2px rgba(0, 0, 0, .95)) drop-shadow(0 0 7px rgba(255, 196, 90, .85)); }
+  svg#hot g:focus { outline: none; }
+  svg#hot g:hover path, svg#hot g.hint path, svg#hot g:focus-visible path { fill: rgba(255, 214, 140, .24); stroke: #ffd98a; stroke-width: 3px; }
+  svg#hot g:hover, svg#hot g.hint, svg#hot g:focus-visible { filter: drop-shadow(0 0 2px rgba(0, 0, 0, .95)) drop-shadow(0 0 7px rgba(255, 196, 90, .85)); }
   #tip { position: absolute; padding: 6px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--gold-soft); font-size: 14px; pointer-events: none; white-space: nowrap; transform: translate(-50%, -140%); backdrop-filter: blur(6px); }
   #title { position: absolute; top: 18px; left: 22px; font-family: 'Cormorant Garamond', serif; font-size: clamp(20px, 2.4vw, 34px); font-weight: 700; letter-spacing: .02em; text-shadow: 0 2px 12px rgba(0,0,0,.8); pointer-events: none; }
   #menu { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 92%; }
@@ -54,11 +56,11 @@
   #sub span { color: rgba(255, 255, 255, .62); border-radius: 6px; padding: 0 2px; transition: color .12s, background-color .12s, text-shadow .12s; }
   #sub span.said { color: #fff; }
   #sub span.now { color: #fff; background: rgba(255, 206, 120, .3); text-shadow: 0 0 10px rgba(255, 214, 140, .95); }
-  /* idle hints: after a few quiet seconds the outlines of everything clickable glow in and out, one after another */
+  /* idle hint: after a few quiet seconds the outlines of everything clickable glow once, one after another, and fade */
   svg#hot.idle g { filter: drop-shadow(0 0 2px rgba(0, 0, 0, .95)) drop-shadow(0 0 7px rgba(255, 196, 90, .85)); }
-  svg#hot.idle g path { stroke-width: 3px; animation: hintglow 7s ease-in-out infinite; animation-delay: var(--d); }
+  svg#hot.idle g path { stroke-width: 3px; animation: hintglow 2.4s ease-in-out var(--d) both; }
   svg#hot.idle g:hover path, svg#hot.idle g.hint path { animation: none; }
-  @keyframes hintglow { 0%, 100% { fill: rgba(255, 214, 140, 0); stroke: rgba(255, 217, 138, 0); } 9%, 36% { fill: rgba(255, 214, 140, .18); stroke: #ffd98a; } 46% { fill: rgba(255, 214, 140, 0); stroke: rgba(255, 217, 138, 0); } }
+  @keyframes hintglow { 0%, 100% { fill: rgba(255, 214, 140, 0); stroke: rgba(255, 217, 138, 0); } 20%, 65% { fill: rgba(255, 214, 140, .18); stroke: #ffd98a; } }
   #choices { position: absolute; z-index: 5; left: 50%; bottom: 74px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 18px; background: var(--panel); border: 1px solid var(--gold-soft); border-radius: 16px; backdrop-filter: blur(6px); }
   #choices p { margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 22px; }
   #choices div { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
@@ -82,7 +84,36 @@
   #help.faded { opacity: 0; }
   #mute { position: absolute; left: 18px; bottom: 18px; z-index: 21; display: flex; align-items: center; gap: 8px; padding: 9px 14px; }
   #mute svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* a film owns the picture: no outline, hint or label may sit over it, and a journey hides the buttons too */
+  #stage.filming svg#hot, #stage.filming #tip, #stage.journey svg#hot, #stage.journey #tip { visibility: hidden; pointer-events: none; }
+  #stage.journey #menu { visibility: hidden; }
+  #stage.journey #film { cursor: pointer; }
+  #busy { position: absolute; z-index: 7; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 10px; padding: 10px 18px; background: var(--panel); border: 1px solid var(--gold-soft); border-radius: 999px; font-size: 14px; pointer-events: none; transition: opacity .25s; }
+  #busy::before { content: ''; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--gold-soft); border-top-color: var(--gold); animation: spin .9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #notice { position: absolute; z-index: 8; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 22px; background: var(--panel); border: 1px solid var(--gold); border-radius: 16px; backdrop-filter: blur(6px); text-align: center; }
+  #notice p { margin: 0; font-size: 15px; }
+  #notice div { display: flex; gap: 8px; }
+  #choices { width: max-content; max-width: 94%; }
   @media (max-width: 700px) { #sub { max-width: 92%; } #viewer { inset: 4%; } #help { display: none; } }
+  /* on a phone the stage is short: the choice panel sits low and compact so every option stays inside the picture */
+  @media (max-width: 700px), (max-height: 500px) {
+    #choices { bottom: 6px; padding: 6px 10px; gap: 5px; border-radius: 12px; }
+    #choices p { font-size: 15px; }
+    #choices div { gap: 5px; }
+    #choices button { padding: 5px 9px; font-size: 12px; gap: 5px; }
+    #choices i { width: 11px; height: 11px; }
+    #choices { z-index: 22; }
+    #mute { left: 8px; bottom: 8px; padding: 6px; }
+    #mute span { display: none; }
+    /* one scrolling strip beside the mute switch, so the buttons never stack over the picture */
+    #menu { bottom: 8px; gap: 6px; left: 50px; right: 8px; transform: none; max-width: none; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
+    #menu::-webkit-scrollbar { display: none; }
+    #menu button { flex: none; }
+    #menu button, #tray button { padding: 5px 10px; font-size: 12px; }
+    #tray { top: 8px; right: 8px; }
+    #title { top: 8px; left: 12px; }
+  }
 </style>
 </head>
 <body>
@@ -99,6 +130,8 @@
     <div id="choices" class="hidden"></div>
     <div id="tip" class="hidden"></div>
     <div id="toast" class="hidden"></div>
+    <div id="busy" class="hidden" role="status">Loading…</div>
+    <div id="notice" class="hidden" role="alertdialog"></div>
     <div id="help">Hover the scene to find what you can touch · H shows all hotspots · M mutes sound</div>
     <button id="mute" aria-pressed="false" title="Mute sound (M)"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path id="waves" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path id="cross" d="M16 9l6 6M22 9l-6 6" style="display:none"/></svg><span>Sound on</span></button>
     <div id="fader"></div>
@@ -108,10 +141,11 @@
 </div>
 <script>
 const $ = (id) => document.getElementById(id);
-const still = $('still'), loop = $('loop'), film = $('film'), hot = $('hot'), menu = $('menu'), sub = $('sub'), tip = $('tip');
+const stage = $('stage'), still = $('still'), loop = $('loop'), film = $('film'), hot = $('hot'), menu = $('menu'), sub = $('sub'), tip = $('tip');
 const music = new Audio();
 let voice = new Audio(); // replaced by a fresh element for every spoken line
 music.loop = true;
+loop.preload = 'auto'; loop.volume = .5;
 
 // one switch for every sound source; the choice is remembered per browser when storage is available
 let muted = false;
@@ -129,10 +163,11 @@ function toggleMute() {
 }
 $('mute').addEventListener('click', toggleMute);
 applyMute();
-let world, place, busy = false, after = false, afterSrc = null; // afterSrc: the still of the variant the visitor chose
+let world, place, after = false, afterSrc = null; // afterSrc: the still of the variant the visitor chose
 const found = new Set();
 const NAMES = { santa: 'Santa Claus', elf: 'Holly the elf', reindeer: 'Dasher the reindeer', snowman: 'The snowman' };
 const SPEAKERS = { santa: 'Santa', elf: 'Holly' };
+const byId = (id) => world.places.find((p) => p.id === id);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const fadeTo = async (on) => { $('fader').classList.toggle('on', on); await sleep(460); };
@@ -144,14 +179,208 @@ function rampMusic(target, ms = 600) {
   const step = (t) => { if (id !== rampId) return; const k = Math.min(1, Math.max(0, (t - t0) / ms)); music.volume = Math.min(1, Math.max(0, from + (target - from) * k)); if (k < 1) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
+// a browser may refuse sound before the first gesture: the music then starts on the next tap or key
+let musicPending = false;
+function playMusic() {
+  music.play().then(() => { musicPending = false; }, (e) => {
+    console.warn('music did not start', e.name);
+    if (musicPending) return;
+    musicPending = true;
+    const retry = () => { removeEventListener('pointerdown', retry, true); removeEventListener('keydown', retry, true); musicPending = false; playMusic(); };
+    addEventListener('pointerdown', retry, true); addEventListener('keydown', retry, true);
+  });
+}
 function setMusic(key) {
   const src = world.music[key];
   if (music.dataset.key === key) return;
-  music.dataset.key = key; music.src = src; music.volume = 0; music.play().catch(() => {}); rampMusic(.55, 1200);
+  music.dataset.key = key; music.src = src; music.volume = 0; playMusic(); rampMusic(.55, 1200);
+}
+music.addEventListener('error', () => console.warn('music failed to load', music.src));
+
+// ---- Film quality --------------------------------------------------------------------------------------------
+// Every film is served twice (served/films/full and served/films/720). A phone, a data saver or a slow measured
+// connection gets 720p; a film that keeps stalling switches to 720p where it is, and the rest of the visit stays there.
+let tier = (() => {
+  const c = navigator.connection;
+  if (c?.saveData || /2g|3g/.test(c?.effectiveType ?? '')) return '720';
+  return matchMedia('(min-width: 1000px), (min-height: 1000px)').matches ? 'full' : '720';
+})();
+const pick = (src, q = tier) => (q === '720' ? src.replace('/films/full/', '/films/720/') : src);
+function lowerTier(why) { if (tier === '720') return; tier = '720'; console.info('switching films to 720p:', why); }
+// the first pictures are a speed sample too: their body's arrival time (after the first byte) against their size
+function sampleLink(src) {
+  const e = performance.getEntriesByName(new URL(src, location.href).href).at(-1);
+  if (!e || !e.transferSize || e.transferSize < 100e3) return; // from cache, or too small to say
+  const ms = e.responseEnd - e.responseStart;
+  if (ms > 0 && e.transferSize * 8 / ms / 1e3 < 8) lowerTier(`a still arrived at ${(e.transferSize * 8 / ms / 1e3).toFixed(1)} Mbps`);
+}
+
+// ---- Fetch-ahead (after the Worlds Kit's video-cache.ts) -----------------------------------------------------
+// A place fetches what the visitor may click next, likeliest first and one at a time, into a small ring of whole
+// films; a click then plays local bytes. Fetching stops while a film plays, so the connection is the film's alone.
+const MAX_CACHED = 6;
+const cache = new Map(), inFlight = new Map(), failedFetch = new Set();
+const inUse = (blobUrl) => [film, loop].some((v) => v.getAttribute('src') === blobUrl);
+function evict() {
+  const oldest = [...cache.entries()].sort((a, b) => a[1].lastAccess - b[1].lastAccess);
+  for (const [url, entry] of oldest) {
+    if (cache.size <= MAX_CACHED) break;
+    if (inUse(entry.blobUrl)) continue; // never pull the bytes out from under a playing film or loop
+    URL.revokeObjectURL(entry.blobUrl); cache.delete(url);
+  }
+}
+function localOrRemote(url) {
+  const e = cache.get(url);
+  if (!e) return url;
+  e.lastAccess = Date.now(); return e.blobUrl;
+}
+function preloadFilm(url) {
+  if (cache.has(url) || failedFetch.has(url)) return Promise.resolve();
+  if (inFlight.has(url)) return inFlight.get(url).promise;
+  const controller = new AbortController(), t0 = performance.now();
+  const promise = fetch(url, { signal: controller.signal })
+    .then(async (r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const blob = await r.blob();
+      // a whole film is a fair speed sample: under 10 Mbps the full-size films would stall, so take 720p
+      const mbps = blob.size * 8 / ((performance.now() - t0) / 1000) / 1e6;
+      if (blob.size > 1.5e6 && mbps < 10) lowerTier(`fetched at ${mbps.toFixed(1)} Mbps`);
+      cache.set(url, { blobUrl: URL.createObjectURL(blob), lastAccess: Date.now() });
+      evict();
+    })
+    .catch((e) => { if (e.name !== 'AbortError') { failedFetch.add(url); console.warn('fetch-ahead failed', url, e.message); } })
+    .finally(() => inFlight.delete(url));
+  inFlight.set(url, { promise, controller });
+  return promise;
+}
+// decoded stills, so a scene can be put up the moment it is needed; a few of them, newest kept
+const stills = new Map();
+function loadStill(src) {
+  let p = stills.get(src);
+  if (p) { stills.delete(src); stills.set(src, p); return p; }
+  const img = new Image();
+  img.decoding = 'async'; img.src = src;
+  p = img.decode().then(() => img);
+  p.catch(() => stills.delete(src));
+  stills.set(src, p);
+  for (const k of stills.keys()) { if (stills.size <= 12) break; if (k !== still.getAttribute('src')) stills.delete(k); }
+  return p;
+}
+// items are [kind, logical src]; films are picked in the quality current when their turn comes
+let stopFetching = () => {};
+function fetchAhead(items) {
+  stopFetching();
+  let live = true, current = null;
+  (async () => {
+    for (const [kind, src] of items) {
+      if (!live) return;
+      if (kind === 'still') { await loadStill(src).catch(() => {}); continue; }
+      current = pick(src); await preloadFilm(current); current = null;
+    }
+  })();
+  stopFetching = () => { live = false; if (current) inFlight.get(current)?.controller.abort(); };
+}
+// what this place may lead to: destination pictures first (small), then up to five films in the order the
+// scene lists its objects, so the ring of six never pushes out what it fetched first
+function prefetchPlace() {
+  if (!place || current) return;
+  const stillsAhead = [], films = [];
+  for (const h of place.hotspots) {
+    if (place.stillAfter && after && h.action === 'transform') continue;
+    const next = h.action === 'travel' ? byId(h.to) : null;
+    if (next) stillsAhead.push(['still', next.still]);
+    if (h.film) films.push(['film', h.film]);
+    if (next?.loop) films.push(['film', next.loop]);
+  }
+  fetchAhead([...stillsAhead, ...films.slice(0, 5)]);
+}
+
+// ---- Busy and trouble ----------------------------------------------------------------------------------------
+// "Loading…" appears only when a wait is long enough to notice
+let busyTimer = 0;
+function setBusy(on, delay = 300) {
+  clearTimeout(busyTimer);
+  if (on) busyTimer = setTimeout(() => $('busy').classList.remove('hidden'), delay);
+  else $('busy').classList.add('hidden');
+}
+// a question when something could not load: resolves with the chosen value, or null when the action is cancelled
+function notice(text, options, t) {
+  const box = $('notice');
+  return new Promise((resolve) => {
+    box.innerHTML = `<p></p><div></div>`;
+    box.firstChild.textContent = text;
+    const close = (v) => { box.classList.add('hidden'); box.innerHTML = ''; resolve(v); };
+    for (const [label, value] of options) {
+      const b = document.createElement('button'); b.textContent = label;
+      b.onclick = (e) => { e.stopPropagation(); close(value); };
+      box.lastChild.appendChild(b);
+    }
+    box.classList.remove('hidden');
+    box.querySelector('button')?.focus();
+    t?.cleanups.push(() => close(null));
+  });
+}
+
+// ---- Scene ---------------------------------------------------------------------------------------------------
+const stillOf = (p, a, as) => (a && p.stillAfter ? (as ?? p.stillAfter) : p.still);
+// the <img> keeps its old picture while a new one loads, so a still is put up only once it is decoded
+async function putStill(src) {
+  await loadStill(src);
+  sampleLink(src);
+  if (still.getAttribute('src') !== src) still.src = src;
+  await still.decode().catch(() => {});
+}
+// Make `next` the scene: its picture first (retrying visibly when it will not load), then its title, objects,
+// loop and music. Resolves false when the action was cancelled meanwhile; nothing of the new scene is shown then.
+async function land(next, a, as, t) {
+  const src = stillOf(next, a, as);
+  for (;;) {
+    setBusy(true);
+    try { await putStill(src); break; } catch (e) {
+      setBusy(false);
+      console.warn('still failed to load', src);
+      if (t?.cancelled) return false;
+      if ((await notice('This scene did not load.', [['Try again', true]], t)) !== true) return false;
+    }
+  }
+  setBusy(false);
+  if (t?.cancelled) return false;
+  place = next; after = a; afterSrc = as;
+  $('title').textContent = place.title;
+  draw(); setLoop(); setMusic(place.music);
+  return true;
+}
+
+// The living picture: shown over the still only once it has a frame to show (and never while a film plays or
+// while outlines need the still underneath). An unchanged loop is never reloaded.
+let hovering = false, hinting = false, idle = false;
+const loopWanted = () => (place?.loop && !(place.stillAfter && after) ? place.loop : null);
+function whenPainted(v) {
+  return new Promise((r) => ('requestVideoFrameCallback' in v ? v.requestVideoFrameCallback(() => r()) : v.addEventListener('playing', () => r(), { once: true })));
+}
+function setLoop() {
+  const want = loopWanted();
+  if (!want) { loop.pause(); loop.classList.add('hidden'); delete loop.dataset.src; return; }
+  const src = pick(want);
+  if (loop.dataset.src !== src) {
+    loop.dataset.src = src; loop.classList.add('hidden'); loop.src = localOrRemote(src);
+    whenPainted(loop).then(() => { if (loop.dataset.src === src) freeze(); });
+  }
+  loop.muted = muted;
+  if (stage.classList.contains('filming')) return;
+  if (loop.paused) loop.play().catch((e) => { if (e.name !== 'AbortError') console.warn('loop did not play', e.name); });
+  if (loop.readyState >= 2) freeze();
+}
+loop.addEventListener('error', () => { console.warn('loop failed to load', loop.dataset.src); loop.classList.add('hidden'); });
+// outlines are traced on the still, but the loop moves: while a hotspot is pointed at, the H hints are on, or the
+// idle hint glows, the loop fades out to reveal the still underneath (its sound keeps playing)
+function freeze() {
+  if (stage.classList.contains('filming') || !loopWanted() || loop.readyState < 2) return;
+  loop.classList.toggle('hidden', hovering || hinting || idle);
 }
 
 function draw() {
-  hot.innerHTML = ''; menu.innerHTML = '';
+  hot.innerHTML = ''; menu.innerHTML = ''; tip.classList.add('hidden'); hovering = false;
   for (const h of place.hotspots) {
     if (place.stillAfter && after && h.action === 'transform') continue;
     if (h.polygons) {
@@ -163,12 +392,12 @@ function draw() {
       p.setAttribute('d', [...h.polygons, ...(h.holes ?? [])].map(ring).join(''));
       p.setAttribute('fill-rule', 'evenodd');
       g.appendChild(p);
-      // outlines are traced on the still, but the loop moves: while a hotspot is hovered, fade the loop out
-      // to reveal the still underneath so the outline sits exactly on the object (loop audio keeps playing)
-      g.addEventListener('mouseenter', () => freeze(true));
-      g.addEventListener('mousemove', (e) => { const r = $('stage').getBoundingClientRect(); tip.textContent = h.label; tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; tip.classList.remove('hidden'); });
-      g.addEventListener('mouseleave', () => { tip.classList.add('hidden'); freeze(false); });
+      g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button'); g.setAttribute('aria-label', h.label);
+      g.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') { hovering = true; freeze(); } });
+      g.addEventListener('pointermove', (e) => { if (e.pointerType !== 'mouse' || stage.classList.contains('filming')) return; const r = stage.getBoundingClientRect(); tip.textContent = h.label; tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; tip.classList.remove('hidden'); });
+      g.addEventListener('pointerleave', () => { tip.classList.add('hidden'); hovering = false; freeze(); });
       g.addEventListener('click', () => act(h));
+      g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); act(h); } });
       if (hinting) g.classList.add('hint');
       g.style.setProperty('--d', `${(hot.childElementCount * 0.18).toFixed(2)}s`);
       hot.appendChild(g);
@@ -177,102 +406,199 @@ function draw() {
     }
   }
   if (place.stillAfter && after) {
-    const b = document.createElement('button'); b.textContent = 'Decorate again'; b.onclick = () => { if (current) current.cancel(); after = false; afterSrc = null; show(); }; menu.prepend(b);
+    const b = document.createElement('button'); b.textContent = 'Decorate again'; b.onclick = () => act({ id: 'again', label: 'Decorate again', action: 'again' }); menu.prepend(b);
   }
   // every place keeps a visible way home; where an object already leads there (the moon's sleigh), the button
   // runs that object's journey so the flight home is not hidden behind finding the sleigh
   if (place.id !== world.start) {
     const home = place.hotspots.find((h) => h.to === world.start);
-    if (!home || home.polygons) { const b = document.createElement('button'); b.textContent = place.id === 'moon' ? 'Fly home to the North Pole' : 'Back to the valley'; b.onclick = () => act(home ?? { action: 'travel', to: world.start }); menu.appendChild(b); }
+    if (!home || home.polygons) { const b = document.createElement('button'); b.textContent = place.id === 'moon' ? 'Fly home to the North Pole' : 'Back to the valley'; b.onclick = () => act(home ?? { id: 'home', label: b.textContent, action: 'travel', to: world.start }); menu.appendChild(b); }
   }
 }
 
-// the outlines start glowing after 6 quiet seconds and stop at the first click, key or running action;
-// the loop fades to the still meanwhile, because the outlines are traced on the still and the loop moves
-let lastInput = performance.now(), idle = false;
+// after 6 quiet seconds the outlines glow once as a short hint, then nothing until the visitor moves and goes
+// quiet again; any mouse move, click or key ends it at once
+let lastInput = performance.now(), hinted = false, idleTimer;
 function setIdle(on) {
   if (on === idle) return;
   idle = on; hot.classList.toggle('idle', on);
-  freeze(on || !!hot.querySelector('g:hover'));
+  clearTimeout(idleTimer);
+  if (on) idleTimer = setTimeout(() => setIdle(false), 2400 + hot.childElementCount * 180);
+  freeze();
 }
-for (const ev of ['pointerdown', 'keydown', 'wheel']) document.addEventListener(ev, () => { lastInput = performance.now(); setIdle(false); }, true);
+for (const ev of ['pointerdown', 'pointermove', 'keydown', 'wheel']) document.addEventListener(ev, () => { lastInput = performance.now(); hinted = false; setIdle(false); }, true);
 setInterval(() => {
-  const quiet = place && $('intro').classList.contains('gone') && !current && !busy && $('viewer').classList.contains('hidden') && !hinting;
-  setIdle(!!quiet && performance.now() - lastInput > 6000);
+  const quiet = place && $('intro').classList.contains('gone') && (!current || current.kind === 'ask') && $('viewer').classList.contains('hidden') && !hinting;
+  if (!quiet) { setIdle(false); return; }
+  if (!hinted && performance.now() - lastInput > 6000) { hinted = true; setIdle(true); }
 }, 400);
 
-let hinting = false;
-function freeze(on) {
-  if (!place.loop || (place.stillAfter && after) || busy) return;
-  loop.classList.toggle('hidden', on || hinting || idle);
-}
-
-function show() {
-  still.src = after && place.stillAfter ? (afterSrc ?? place.stillAfter) : place.still;
-  $('title').textContent = place.title;
-  if (place.loop && !(place.stillAfter && after)) {
-    loop.src = place.loop; loop.volume = .5; loop.classList.toggle('hidden', hinting || idle); loop.play().catch(() => {});
-  } else { loop.pause(); loop.classList.add('hidden'); }
-  setMusic(place.music);
-  draw();
-}
-
-// Every action can be interrupted: a new click cancels the running one (its cleanups stop the media and
-// restore the scene, and follow-ups such as a figure unlock are skipped), then the new action starts at once.
-// A journey between places is the exception: the old place's hotspots no longer apply mid-flight, so a
-// click on the film skips ahead to the destination instead.
-let current = null;
-function begin(kind) {
-  const t = { kind, cancelled: false, cleanups: [], cancel() { if (this.cancelled) return; this.cancelled = true; for (const f of this.cleanups.splice(0)) f(); } };
-  current = t; return t;
-}
-function end(t) { if (current === t) current = null; }
-// resolves on the media event or on cancellation, whichever comes first
-function until(el, type, t) {
+// ---- Films ---------------------------------------------------------------------------------------------------
+// Play one film full-frame. The scene stays up until the film's first frame is painted; "Loading…" shows while it
+// waits or stalls; a film that keeps stalling switches to 720p where it is; a load error is retried once, then in
+// 720p, then the visitor is asked (try again or skip). Resolves 'ended', 'skipped' or 'cancelled'; on 'ended' the
+// last frame stays on screen until the caller has the next picture ready and calls endFilm().
+function runFilm(src, t, journey) {
+  stopFetching();
+  stage.classList.add('filming'); stage.classList.toggle('journey', !!journey);
+  tip.classList.add('hidden'); setIdle(false);
+  rampMusic(.12);
   return new Promise((resolve) => {
-    if (t.cancelled) return resolve();
-    const done = () => { el.removeEventListener(type, done); resolve(); };
-    el.addEventListener(type, done); t.cleanups.push(done);
+    let q = tier, retried = false, shown = false, stallTimer = 0, settled = false;
+    const off = [];
+    const on = (ev, f) => { film.addEventListener(ev, f); off.push(() => film.removeEventListener(ev, f)); };
+    const finish = (result) => {
+      if (settled) return;
+      settled = true; off.forEach((f) => f()); clearTimeout(stallTimer); setBusy(false); t.skip = null;
+      if (result === 'cancelled') endFilm();
+      resolve(result);
+    };
+    t.cleanups.push(() => finish('cancelled'));
+    const start = () => film.play().catch((e) => {
+      // a source that will not load rejects here too; its error event handles that (retry, 720p, then ask)
+      if (t.cancelled || settled || e.name === 'AbortError' || e.name === 'NotSupportedError' || film.error) return;
+      console.warn('film did not play', e.name);
+      setBusy(false);
+      notice(e.name === 'NotAllowedError' ? 'Tap to play the film.' : 'The film did not start.', [['Play', true], ['Skip it', false]], t)
+        .then((v) => { if (v === true) start(); else if (v === false) finish('skipped'); });
+    });
+    const load = (at) => {
+      const want = pick(src, q);
+      film.dataset.src = want; film.src = localOrRemote(want); film.volume = 1; film.muted = muted;
+      if (at) film.currentTime = at;
+      whenPainted(film).then(() => {
+        if (settled || film.dataset.src !== want || shown) return;
+        shown = true; setBusy(false);
+        film.classList.remove('hidden'); loop.classList.add('hidden'); loop.pause();
+      });
+      start();
+    };
+    on('playing', () => { setBusy(false); if (shown) clearTimeout(stallTimer); });
+    on('waiting', () => {
+      if (!shown) return;
+      setBusy(true, 400); clearTimeout(stallTimer);
+      stallTimer = setTimeout(() => { if (q === 'full' && !settled) { lowerTier('a film stalled'); q = '720'; load(film.currentTime); } }, 2500);
+    });
+    on('ended', () => finish('ended'));
+    on('error', async () => {
+      if (t.cancelled || settled) return;
+      const at = film.currentTime || 0;
+      console.warn('film failed to load', film.dataset.src, film.error?.code);
+      cache.delete(film.dataset.src);
+      if (!retried) { retried = true; load(at); return; }
+      if (q === 'full') { q = '720'; retried = false; load(at); return; }
+      setBusy(false);
+      const v = await notice('This film did not load.', [['Try again', true], ['Skip it', false]], t);
+      if (v === true) { retried = false; failedFetch.clear(); load(at); } else if (v === false) finish('skipped');
+    });
+    // a journey can be skipped: jump to its last frame (the landing); one that has not loaded enough is given up
+    t.skip = () => {
+      if (shown && Number.isFinite(film.duration)) { film.currentTime = Math.max(0, film.duration - 0.05); if (film.paused) start(); }
+      else finish('skipped');
+    };
+    setBusy(true);
+    load(0);
+    stallTimer = setTimeout(() => { if (!shown && q === 'full' && !settled) { lowerTier('a film was slow to start'); q = '720'; load(0); } }, 4000);
   });
 }
-film.addEventListener('click', () => { if (current && current.kind === 'travel') current.cancel(); });
+// take the film down; it fades over the scene that is already up, and lets go of its file afterwards
+function endFilm() {
+  stage.classList.remove('filming', 'journey');
+  film.pause(); film.classList.add('hidden');
+  const was = film.dataset.src;
+  setTimeout(() => { if (film.dataset.src === was && film.classList.contains('hidden')) { film.removeAttribute('src'); delete film.dataset.src; film.load(); } }, 450);
+  setLoop();
+}
+film.addEventListener('click', () => { if (current?.kind === 'travel') current.skip?.(); });
 
-async function playFilm(src, t, journey) {
-  busy = true; tip.classList.add('hidden');
-  if (journey) { hot.style.pointerEvents = 'none'; menu.style.visibility = 'hidden'; }
-  t.cleanups.push(() => { film.pause(); film.classList.add('hidden'); busy = false; hot.style.pointerEvents = ''; menu.style.visibility = ''; });
-  rampMusic(.12);
-  film.src = src; film.currentTime = 0; film.volume = 1;
-  await until(film, 'canplay', t); if (t.cancelled) return false;
-  film.classList.remove('hidden'); loop.classList.add('hidden'); loop.pause();
-  film.play().catch(() => {});
-  await until(film, 'ended', t); if (t.cancelled) return false;
-  busy = false; hot.style.pointerEvents = ''; menu.style.visibility = '';
-  return true;
+// ---- Actions -------------------------------------------------------------------------------------------------
+// Each click or tap is one action that owns the stage from loading to its last follow-up. A second click on the
+// same thing while it runs is ignored; a journey cannot be interrupted, only skipped; anything else hands over to
+// the new action, whose cancellation of the old one stops its media and skips its follow-ups (no line, no figure).
+let current = null, actions = 0;
+const keyOf = (h) => `${place?.id}/${h.id ?? ''}/${h.label ?? ''}`;
+function begin(kind, key) {
+  let gone;
+  const t = { id: ++actions, kind, key, cancelled: false, cleanups: [], skip: null, gone: new Promise((r) => { gone = r; }),
+    cancel() { if (this.cancelled) return; this.cancelled = true; for (const f of this.cleanups.splice(0).reverse()) f(); gone(); } };
+  current = t; return t;
+}
+const untilCancelled = (t) => t.gone.then(() => 'cancelled');
+
+async function act(h) {
+  if (!place) return;
+  const key = keyOf(h);
+  if (current && !current.cancelled) {
+    if (current.key === key) return;
+    if (current.kind === 'travel') return;
+    current.cancel();
+  }
+  const kind = h.choices ? 'ask' : h.action;
+  const t = begin(kind, key);
+  try {
+    if (h.choices) return await ask(h, t);
+    if (h.action === 'travel') return await travel(h, t);
+    if (h.action === 'again') return await land(place, false, null, t);
+    if (h.action === 'transform' || h.action === 'play') return await moment(h, t);
+    if (h.action === 'speak') { if ((await speak(h, t)) && h.collect) await collect(h.collect, t); return; }
+    if (h.action === 'collect') return await collect(h.collect, t);
+  } catch (e) {
+    console.error(e);
+  } finally {
+    if (current === t) { current = null; prefetchPlace(); }
+  }
 }
 
-async function go(to, h, t) {
-  const next = world.places.find((p) => p.id === to);
-  // skipping a journey lands at its destination at once
-  t.cleanups.push(() => { place = next; after = false; afterSrc = null; show(); rampMusic(.55); $('fader').classList.remove('on'); });
-  if (h && h.film) {
-    if (!(await playFilm(h.film, t, true))) return;
-    place = next; after = false; afterSrc = null; show(); rampMusic(.55);
-    await sleep(80); if (!busy) film.classList.add('hidden');
+async function travel(h, t) {
+  const next = byId(h.to);
+  stage.classList.add('journey'); tip.classList.add('hidden'); setIdle(false);
+  t.cleanups.push(() => { stage.classList.remove('journey'); $('fader').classList.remove('on'); });
+  loadStill(next.still).catch(() => {}); // the landing picture is decoded while the film plays
+  if (h.film) {
+    const r = await runFilm(h.film, t, true);
+    if (r === 'cancelled') return;
+    if (!(await land(next, false, null, t))) return;
+    endFilm(); rampMusic(.55);
   } else {
+    stopFetching();
     await fadeTo(true); if (t.cancelled) return;
-    place = next; after = false; afterSrc = null; show();
+    if (!(await land(next, false, null, t))) return;
+    stage.classList.remove('journey');
     await fadeTo(false);
   }
+}
+
+async function moment(h, t) {
+  const result = h.action === 'transform' ? (h.result ?? place.stillAfter) : null;
+  if (result) loadStill(result).catch(() => {}); // the result picture is decoded while the film plays
+  const r = await runFilm(h.film, t);
+  if (r === 'cancelled') return;
+  // the film's last frame stays up until the picture it lands on is ready
+  if (result && !(await land(place, true, h.result ?? null, t))) return;
+  endFilm(); rampMusic(.55);
+  // a film can lead into a spoken line and a figure (Santa waves, then talks)
+  if (h.line && !(await speak(h, t))) return;
+  if (h.collect) await collect(h.collect, t);
+}
+
+// resolves with the first of the element's events named, or 'cancelled'
+function event(el, types, t) {
+  let off;
+  const p = new Promise((r) => {
+    const f = (e) => r(e.type);
+    for (const ty of types) el.addEventListener(ty, f);
+    off = () => { for (const ty of types) el.removeEventListener(ty, f); };
+  });
+  return Promise.race([p, untilCancelled(t)]).finally(off);
 }
 
 async function speak(h, t) {
   const line = new Audio(h.line);
   line.volume = 1; line.muted = muted;
   voice = line;
-  const restore = () => { line.pause(); sub.classList.add('hidden'); rampMusic(.55); if (place.loop) loop.volume = .5; };
+  const restore = () => { line.pause(); sub.classList.add('hidden'); rampMusic(.55); loop.volume = .5; };
   t.cleanups.push(restore);
-  rampMusic(.08, 300); if (place.loop) loop.volume = .1;
+  rampMusic(.08, 300); loop.volume = .1;
   sub.innerHTML = `<b>${SPEAKERS[h.speaker] ?? ''}</b>`;
   const words = h.text.split(/\s+/).map((w, i) => { const s = document.createElement('span'); s.textContent = w; sub.append(i ? ' ' : '', s); return s; });
   sub.classList.remove('hidden');
@@ -297,24 +623,34 @@ async function speak(h, t) {
   };
   line.addEventListener('playing', () => requestAnimationFrame(tick), { once: true });
   // if the browser refuses to start the voice, say so and let one click start it instead of failing silently
-  line.play().catch(() => {
-    if (t.cancelled) return;
+  line.play().catch((e) => {
+    if (t.cancelled || e.name === 'AbortError' || line.error) return;
     const b = document.createElement('button'); b.textContent = 'Play voice'; b.style.marginLeft = '10px';
-    b.onclick = (e) => { e.stopPropagation(); b.remove(); line.play().catch(() => {}); };
+    b.onclick = (ev) => { ev.stopPropagation(); b.remove(); line.play().catch(() => {}); };
     sub.appendChild(b);
   });
-  await until(line, 'ended', t); if (t.cancelled) return false;
-  await sleep(500); if (t.cancelled) return false;
+  const how = await event(line, ['ended', 'error'], t);
+  if (how === 'cancelled') return false;
+  // a line that will not load is still told: its words stay up for as long as they take to read
+  if (how === 'error') { console.warn('voice line failed to load', h.line); words.forEach((w) => { w.className = 'said'; }); await Promise.race([sleep(1500 + h.text.length * 45), untilCancelled(t)]); }
+  else await Promise.race([sleep(500), untilCancelled(t)]);
+  if (t.cancelled) return false;
   restore();
   return true;
 }
 
-async function collect(key) {
+async function collect(key, t) {
   if (!found.has(key)) {
     found.add(key); renderTray();
-    const t = $('toast'); t.textContent = `You found ${NAMES[key]}!`; t.classList.remove('hidden'); await sleep(1600); t.classList.add('hidden');
+    const toast = $('toast'); toast.textContent = `You found ${NAMES[key]}!`; toast.classList.remove('hidden');
+    t.cleanups.push(() => toast.classList.add('hidden'));
+    await Promise.race([sleep(1600), untilCancelled(t)]);
+    toast.classList.add('hidden');
   }
+  // a cancelled or abandoned action never opens its figure over the scene that replaced it
+  if (t.cancelled || current !== t) return false;
   openViewer(key);
+  return true;
 }
 function renderTray() {
   $('help').classList.add('faded'); // the tray takes the top edge once figures are found
@@ -337,33 +673,13 @@ function ask(h, t) {
   }
   choices.classList.remove('hidden');
   t.cleanups.push(() => choices.classList.add('hidden'));
-  return until(choices, 'never', t); // stays open until another action cancels it
-}
-
-async function act(h) {
-  if (current) current.cancel();
-  const t = begin(h.choices ? 'ask' : h.action === 'travel' ? 'travel' : h.action);
-  try {
-    if (h.choices) return await ask(h, t);
-    if (h.action === 'travel') return await go(h.to, h, t);
-    if (h.action === 'transform' || h.action === 'play') {
-      t.cleanups.push(() => show()); // an interrupted film hands the scene back to its still and loop
-      if (!(await playFilm(h.film, t))) return;
-      if (h.action === 'transform') { after = true; afterSrc = h.result ?? null; }
-      show(); rampMusic(.55);
-      await sleep(80); if (!busy) film.classList.add('hidden');
-      // a film can lead into a spoken line and a figure (Santa waves, then talks)
-      if (h.line && !(await speak(h, t))) return;
-      if (h.collect) await collect(h.collect);
-      return;
-    }
-    if (h.action === 'speak') { if ((await speak(h, t)) && h.collect) await collect(h.collect); return; }
-    if (h.action === 'collect') return await collect(h.collect);
-  } finally { end(t); }
+  // while the visitor decides, the results they may pick are fetched: pictures first, then the films in order
+  fetchAhead([...h.choices.filter((c) => c.result).map((c) => ['still', c.result]), ...h.choices.map((c) => ['film', c.film])]);
+  return untilCancelled(t); // stays open until another action cancels it
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.key.toLowerCase() === 'h' && place) { hinting = !hinting; hot.querySelectorAll('g').forEach((g) => g.classList.toggle('hint', hinting)); freeze(hinting); }
+  if (e.key.toLowerCase() === 'h' && place) { hinting = !hinting; hot.querySelectorAll('g').forEach((g) => g.classList.toggle('hint', hinting)); freeze(); }
   if (e.key === 'Escape') $('viewer').classList.add('hidden');
   if (e.key.toLowerCase() === 'm') toggleMute();
 });
@@ -371,17 +687,24 @@ document.addEventListener('keydown', (e) => {
 // the intro works before the world data arrives: entering just waits for it
 let timings = {};
 fetch('np-line-timings.json').then((r) => r.json()).then((j) => { timings = j; }).catch(() => {});
-const ready = fetch('np-world.json').then((r) => r.json()).then((w) => { world = w; place = w.places.find((p) => p.id === w.start); still.src = place.still; });
+const ready = fetch('np-world.json').then((r) => r.json()).then((w) => {
+  world = w;
+  const start = byId(w.start);
+  loadStill(start.still).then(() => { if (!still.getAttribute('src')) still.src = start.still; }, () => {});
+});
 async function enter() {
-  if ($('intro').classList.contains('gone')) return;
-  $('enter').textContent = 'Loading…';
-  try { await ready; } catch (e) { $('enter').textContent = 'Could not load np-world.json'; return; }
-  $('intro').classList.add('gone');
-  show();
-  setTimeout(() => $('help').classList.add('faded'), 12000);
+  if ($('intro').classList.contains('gone') || $('enter').disabled) return;
+  $('enter').textContent = 'Loading…'; $('enter').disabled = true;
+  try { await ready; } catch (e) { $('enter').textContent = 'Could not load np-world.json. Try again'; $('enter').disabled = false; return; }
+  const t = begin('enter', 'enter');
+  try {
+    if (!(await land(byId(world.start), false, null, t))) return;
+    $('intro').classList.add('gone');
+    setTimeout(() => $('help').classList.add('faded'), 12000);
+  } finally { if (current === t) current = null; $('enter').disabled = false; prefetchPlace(); }
 }
 $('enter').addEventListener('click', enter);
-document.addEventListener('keydown', (e) => { if (e.key === 'Enter') enter(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !$('intro').classList.contains('gone')) enter(); });
 </script>
 </body>
 </html>
